@@ -1,0 +1,348 @@
+#include <iostream>     // For cin, cout, endl
+#include <iomanip>      // used for setting output field size using setw
+#include <cstdlib>      // For rand()
+#include <string>       // User input to lower
+#include <cmath>
+using namespace std;    // So we don't need std:: in front of every cin, cout, and endl
+
+const int MaxBoardSize = 12;          // Max number of squares per side
+const int MaxTileStartValue = 1024;   // Max tile value to start out on a 4x4 board
+
+
+//--------------------------------------------------------------------
+// Display Instructions
+void displayInstructions()
+{
+    cout << "Welcome to 1024. \n"
+         << "  \n"
+         << "For each move enter a direction as a letter key, as follows: \n"
+		 << "    W    \n"
+		 << "  A S D  \n"
+		 << "where A=left,W=up, D=right and S=down. \n"
+		 << "  \n"
+		 << "After a move, when two identical valued tiles come together they    \n"
+		 << "join to become a new single tile with the value of the sum of the   \n"
+		 << "two originals. This value gets added to the score.  On each move    \n"
+		 << "one new randomly chosen value of 2 or 4 is placed in a random open  \n"
+		 << "square.  User input of x exits the game.                            \n"
+		 << "  \n";
+}//end displayInstructions()
+
+//--------------------------------------------------------------------
+// Place a randomly selected 2 or 4 into a random open square on
+// the board.
+void placeRandomPiece( int board[], int squaresPerSide)
+{
+    // Randomly choose a piece to be placed (2 or 4)
+    int pieceToPlace = 2;
+    if( rand()%2 == 1) {
+        pieceToPlace = 4;
+    }
+    
+    // Find an unoccupied square that currently has a 0
+    int index;
+    do {
+        index = rand() % (squaresPerSide*squaresPerSide);
+    }while( board[ index] != 0);
+    
+    // board at position index is blank, so place piece there
+    board[ index] = pieceToPlace;
+}//end placeRandomPiece()
+
+void displayAsciiBoard(int board[], int squaresPerSide, int score)
+{
+       
+    cout << "Score: "<< score;
+    cout << endl;
+    for (int i = 0; i < squaresPerSide*squaresPerSide; ++i){
+        if (i%squaresPerSide == 0){
+            cout << endl;
+            cout << endl;
+        }
+        if (board[i] == 0){
+            cout << setw(6) << '.';
+        }else{
+            cout << setw(6) << board[i];
+        }
+        
+    }
+    
+}// end displayAsciiBoard()
+//--------------------------------------------------------------------
+//Set board to display
+void setBoard(int board[], int squaresPerSide, int &boardSize)
+{
+    boardSize = squaresPerSide * squaresPerSide;
+    for (int i = 0; i< boardSize; ++i){
+        board[i] = 0;
+    }       
+    cout << "Game ends when you reach " << pow(2, squaresPerSide + 6) << "."<< endl;
+    
+    placeRandomPiece(board, squaresPerSide);
+    placeRandomPiece(board, squaresPerSide);
+}// end setBoard()
+
+//--------------------------------------------------------------------
+//Implement moves functions
+
+void moveLeft(int board[], int squaresPerSide, int &score)
+{
+    for( int row = 0; row < squaresPerSide; row ++){
+        bool merged = false;
+        for (int col = 1; col < squaresPerSide; col ++){
+            int x = col;
+            if (board[x + row * squaresPerSide] != 0){
+                   while(x != 0){
+                       // merge 
+                       if (board[(x-1) + row * squaresPerSide] == board[x + row * squaresPerSide]-0){
+                          if(!merged){
+                              merged = true;
+                              board[(x-1) + row * squaresPerSide] =  board[x + row * squaresPerSide]*2;
+                              score = score + board[(x-1) + row * squaresPerSide];
+                              board[x + row * squaresPerSide] = 0;
+                              x--;
+                          }
+                          break;
+                       }
+                       // move to next availiable 
+                       else if(board[(x-1) + row * squaresPerSide] == 0){
+                           board[(x-1) + row * squaresPerSide] =  board[x + row * squaresPerSide];
+                           board[x + row * squaresPerSide] = 0;
+                           x--;
+                       }
+                       else{
+                           break;
+                       }
+                }
+            }
+        }
+    }
+}//end  moveLeft()
+
+void moveRight(int board[], int squaresPerSide, int &score)
+{
+  for( int row = 0; row < squaresPerSide; row ++){
+    bool merged = false;
+    for (int col = squaresPerSide -2; col >= 0 ; col --){
+        int x = col;        
+        if (board[x + row * squaresPerSide] != 0){               
+               while(x < squaresPerSide-1){
+                   if (board[(x+1) + row * squaresPerSide] == board[x + row * squaresPerSide] ){
+                      if(!merged){
+                          merged = true;
+                          board[(x+1) + row * squaresPerSide] =  board[x + row * squaresPerSide]*2;
+                          score = score + board[(x+1) + row * squaresPerSide];
+                          board[x + row * squaresPerSide] = 0;
+                          x++;  
+                      }
+                      break;
+                   }else if(board[(x+1) + row * squaresPerSide] == 0){
+                       board[(x+1) + row * squaresPerSide] =  board[x + row * squaresPerSide];
+                       board[x + row * squaresPerSide] = 0;
+                       x++;
+                   }else{
+                       break;
+                   }
+                }
+            }
+        }
+    }  
+   
+} //end moveRight()
+
+void moveUp(int board[], int squaresPerSide, int &score)
+{
+    for( int col = 0; col < squaresPerSide; col ++){
+        bool merged = false;
+        for (int row = 1; row < squaresPerSide; row ++){             
+            if (board[col + row * squaresPerSide] != 0){
+              int x = row;
+              while(x != 0){
+                    if (board[col + (x-1) * squaresPerSide] == board[col + x * squaresPerSide] ){
+                        if(!merged){
+                            merged = true;
+                            board[col + (x-1) * squaresPerSide] =  board[col + x * squaresPerSide]*2;
+                            board[col + x * squaresPerSide] = 0;
+                            score = score + board[col + (x-1) * squaresPerSide];
+                            x--;
+                        }
+                        break;
+                    }else if(board[col + (x-1) * squaresPerSide] == 0){
+                        board[col + (x-1) * squaresPerSide] =  board[col + x * squaresPerSide];
+                        board[col + x * squaresPerSide] = 0;
+                        x--; 
+                    }else{
+                       break;
+                    }
+                }
+            }
+        }
+    }
+ 
+}// end moveUp()
+
+void moveDown(int board[], int squaresPerSide, int &score)
+{
+  for( int col = 0; col < squaresPerSide; col ++){
+    bool merged = false;
+    for (int row = squaresPerSide -2; row >= 0 ; row --){        
+        if (board[col + row * squaresPerSide] != 0){
+               int x = row;
+               while(x < squaresPerSide-1){
+                   if (board[col + (x+1) * squaresPerSide] == board[col + x * squaresPerSide] ){
+                        if(!merged){
+                            merged = true;   
+                            board[col + (x+1) * squaresPerSide] =  board[col + x * squaresPerSide]*2;
+                            board[col + x * squaresPerSide] = 0;
+                            score = score + board[col + (x+1) * squaresPerSide];
+                            x++;
+                        }
+                        break;
+                   }else if(board[col + (x+1) * squaresPerSide] == 0){
+                        board[col + (x+1) * squaresPerSide] =  board[col + x * squaresPerSide];
+                        board[col + x * squaresPerSide] = 0;
+                        x++;
+                   }else{
+                       break;
+                   }
+                }
+            }
+        }
+    } 
+}// end moveDown()
+
+//---------------------------------------------------------------------------------------
+int main()
+{
+    int score = 0;
+    int squaresPerSide = 4;                          // User will enter this value.  Set default to 4
+    int boardSize;                                   // board size based on squaresPerSide
+    int board[ MaxBoardSize*MaxBoardSize ];          // space for largest possible board
+    int previousBoard[ MaxBoardSize * MaxBoardSize]; // space for copy of board, used to see if a move changed the board.    
+    int maxTileValue = MaxTileStartValue;            // 1024 for 4x4 board, 2048 for 5x5, 4096 for 6x6, etc.
+    int move = 1;                                    // user move counter
+    
+    int fullBoard;                                   // to check if boars is full.
+    char userInput = ' ';                            // handles user input    
+    int position;                                    // to set up possition of new tile
+    int value;                                       // set the new tile value
+    bool maxReached = false;                         // check if max tile value reached
+    bool resize = false;                             // vheck if resize board was choosen
+    
+    displayInstructions();
+    
+    // Get the board size, create and initialize the board, and set the max tile value depending on board size       
+    setBoard(board, squaresPerSide, boardSize);
+    fullBoard = boardSize;
+    
+    // Infinite loop to run program until user selects exit, board is full, or max tile value is reached
+    while( fullBoard != 0 && !maxReached)
+    {
+        fullBoard = boardSize;
+        // If resize 
+        if(resize){          
+            // Prompt for board size
+            cout << "Resetting board" << endl;
+            cout << endl;
+            cout << "Enter the size board you want, between 4 and 12: ";
+            cin >> squaresPerSide;
+            cout << endl;
+            // Set and display new board
+            setBoard(board, squaresPerSide, boardSize);
+            fullBoard = boardSize;
+            resize = false;
+            //Reset moves and score to beginning
+            score = 0;
+            move = 1;
+        }
+        
+        // Display the text-based board  
+        displayAsciiBoard( board, squaresPerSide, score);
+        cout << endl;
+                
+        // Make a copy of the board.
+        for (int i = 0; i < boardSize; ++i){
+            previousBoard[i] = board[i];
+        }
+        
+        //Prompt for and handle user input
+        cout << endl;
+        cout << move << ". Your move: " << endl;
+        cin >> userInput;
+        userInput = tolower(userInput);
+        
+        // Check is there is no more moves available/ needed.
+        for (int i = 0; i < boardSize; i++){
+            if (board[i] != 0 ){
+                fullBoard--;
+                if (board[i] == maxTileValue){
+                    maxReached = true;
+                }
+            }
+        }
+        
+        // Break if game ends.
+        if (fullBoard == 0 && maxReached){
+            break;
+        }
+        
+        //X = exit, P = put new value, R = resize
+        //A = left,W = up, D = right,S = down.
+        switch (userInput) {
+            case 'x':
+                    cout << "Thanks for playing. Exiting program... \n\n";
+                    exit( 0);
+                    break;
+            case 'p':
+                    cin >> position;
+                    cin >> value;
+                    board[position] = value;
+                    break;
+            case 'r':                    
+                    resize = true;
+                    break;
+            case 'a':
+                    moveLeft(board, squaresPerSide, score);
+                    break;
+            case 'd':
+                    moveRight(board, squaresPerSide, score);
+                    break;
+            case 'w':
+                    moveUp(board, squaresPerSide, score);
+                    break;
+            case 's':
+                    moveDown(board, squaresPerSide, score);
+                    break;
+            default:
+                    cout << "Invalid input, please retry.";
+                    continue;
+                    break;
+        }//end switch( userInput)
+        
+        // If the move resulted in pieces changing position, then it was a valid move
+        // so place a new random piece (2 or 4) in a random open square and update the move number.
+        for(int i = 0; i < boardSize; i++){
+            if (previousBoard[i] != board[i] && userInput != 'p'){
+              placeRandomPiece(board, squaresPerSide);
+              move++;
+              break;
+            }
+            
+        }      
+        
+        //system("clear");   // Clear the screen in UNIX / Codio.  Should be "cls" on windows.
+                             //     May not work in default Mac Xcode configuration, or some other environments.
+    }//end while( true)
+    
+    // Display results and the board
+    if (fullBoard == 0){     
+        cout << "No more available moves.  Game is over."<< endl;
+        displayAsciiBoard(board, squaresPerSide, score);
+    }
+    else if (maxReached){
+        cout << "Congratulations!  You made it to "<< maxTileValue <<" !!!" << endl;
+        displayAsciiBoard(board, squaresPerSide, score);
+    }
+
+    return 0;
+}//end main()
